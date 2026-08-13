@@ -28,8 +28,8 @@ src/old_files/
 README.html
 
 # R / RStudio
+*.Rproj
 .Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
-EOF
