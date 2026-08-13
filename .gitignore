@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Working scratch files (not part of the package)
+scratch/
+src/old_files/
+
+# Quarto / render artifacts
+/.quarto/
+*_files/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Dropbox
+.dropbox
+.env
+README.html
+
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+EOF

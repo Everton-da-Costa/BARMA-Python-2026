@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "barma-python"
+version = "1.0.0"
+description = "Python implementation of the beta autoregressive moving average (betaARMA) model for time series bounded in (0, 1)."
+readme = "README.md"
+authors = [{name = "Everton da Costa", email = "everto.cost@gmail.com"}]
+license = {text = "MIT"}
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=1.21.0",
+    "scipy>=1.7.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.5.0",
+    "statsmodels>=0.14.0",
+]
+
+[project.optional-dependencies]
+# Baseline models used only in the forecast benchmark (DHR, SARIMA, ARIMA).
+benchmark = [
+    "pmdarima>=2.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
