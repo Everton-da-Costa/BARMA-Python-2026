@@ -1,6 +1,6 @@
 # BARMA-Python
 
-[![CI](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions/workflows/ci.yaml/badge.svg)](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions)
+<!--[![CI](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions/workflows/ci.yaml/badge.svg)](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions)-->
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -191,10 +191,11 @@ On the 66-month test set (roughly 5.5 years), forecast accuracy was:
 | SARIMA     | 11.22   | 13.52    |
 | ARIMA      | 11.88   | 14.38    |
 
-$\beta$ARMA achieves the lowest error on both metrics. It is essentially tied
-with DHR on point accuracy, but unlike all three baselines its forecasts are
-guaranteed to remain within $(0, 1)$ by construction — while SARIMA and ARIMA
-collapse toward the training mean over the horizon.
+$\beta$ARMA achieves the lowest error on both metrics. 
+While DHR yields highly competitive point accuracy, unlike all three baselines,
+$\beta$ARMA forecasts are guaranteed to remain within $(0, 1)$ by construction.
+It is notable that SARIMA and ARIMA collapse toward the training mean over the horizon.
+This is visualized in Figure 6 of the **[Modeling report](https://htmlpreview.github.io/?https://github.com/Everton-da-Costa/BARMA-Python-2026/blob/main/report/report_brasilia_relative_humidity.html)**.
 
 ---
 
@@ -304,18 +305,32 @@ If you use this software in your research, please cite the repository:
 
 ```bibtex
 @software{Costa_BARMA_Python_2026,
-  author  = {Costa, Everton da},
   title   = {{BARMA-Python}: A Python Implementation of Beta Autoregressive
              Moving Average Models},
+  author  = {Costa, E.},
   year    = {2026},
   version = {1.0.0},
   url     = {https://github.com/Everton-da-Costa/BARMA-Python-2026}
 }
 ```
 
+This project is a direct Python port of the `betaARMA` reference implementation on CRAN.
+If your work utilizes or compares against the R ecosystem, please consider citing the 
+original package:
+
+```bibtex
+@Manual{Costa_Cribari_Scher2026,
+  title   = {betaARMA: Beta Autoregressive Moving Average Models},
+  author  = {Costa, E. and Cribari-Neto, F. and Scher, V. T.},
+  year    = {2026},
+  note    = {R package version 1.2.0},
+  doi     = {10.32614/CRAN.package.betaARMA},
+  url     = {[https://CRAN.R-project.org/package=betaARMA](https://CRAN.R-project.org/package=betaARMA)}
+}
+```
+
 The implementation is based on the methodology introduced by
-Rocha & Cribari-Neto (2009); if you reference the underlying model, please also
-cite:
+Rocha & Cribari-Neto (2009); if you reference the model, please also cite:
 
 ```bibtex
 @Article{Rocha_Cribari_2009,
