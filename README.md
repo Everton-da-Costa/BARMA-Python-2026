@@ -1,15 +1,12 @@
 # BARMA-Python
 
-<!-- Badges: enable once CI is configured.
 [![CI](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions/workflows/ci.yaml/badge.svg)](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions)
--->
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-A Python implementation of the **Beta Autoregressive Moving Average
-($\beta$ARMA)** model for time series bounded in the unit interval $(0, 1)$ —
+A Python implementation of the **Beta Autoregressive Moving Average** ($\beta$ARMA) model for time series bounded in the unit interval $(0, 1)$ —
 rates, proportions, and relative indices. This is a Python port of the
 methodology available in R via the [`betaARMA`](https://github.com/Everton-da-Costa/betaARMA)
 package on CRAN, validated against the R reference to machine precision (`1e-10`).
@@ -189,7 +186,7 @@ On the 66-month test set (roughly 5.5 years), forecast accuracy was:
 
 | Model      | MAE (%) | RMSE (%) |
 |------------|:-------:|:--------:|
-| **βARMA**  | **8.73**| **10.39**|
+| BARMA      | 8.73    | 10.39    |
 | DHR        | 8.90    | 10.57    |
 | SARIMA     | 11.22   | 13.52    |
 | ARIMA      | 11.88   | 14.38    |
@@ -198,10 +195,6 @@ $\beta$ARMA achieves the lowest error on both metrics. It is essentially tied
 with DHR on point accuracy, but unlike all three baselines its forecasts are
 guaranteed to remain within $(0, 1)$ by construction — while SARIMA and ARIMA
 collapse toward the training mean over the horizon.
-
-<!-- After exporting the 4-model forecast comparison figure to assets/forecast_comparison.png, uncomment:
-![Out-of-sample forecast comparison: βARMA and DHR track the seasonal cycle closely, while SARIMA and ARIMA collapse toward the mean.](assets/forecast_comparison.png)
--->
 
 ---
 
