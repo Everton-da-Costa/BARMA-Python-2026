@@ -1,6 +1,6 @@
 # BARMA-Python
 
-<!-- Badges: enable once the repo is public and CI is configured.
+<!-- Badges: enable once CI is configured.
 [![CI](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions/workflows/ci.yaml/badge.svg)](https://github.com/Everton-da-Costa/BARMA-Python-2026/actions)
 -->
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
@@ -12,7 +12,12 @@ A Python implementation of the **Beta Autoregressive Moving Average
 ($\beta$ARMA)** model for time series bounded in the unit interval $(0, 1)$ —
 rates, proportions, and relative indices. This is a Python port of the
 methodology available in R via the [`betaARMA`](https://github.com/Everton-da-Costa/betaARMA)
-package on CRAN, validated against the R reference to machine precision.
+package on CRAN, validated against the R reference to machine precision (`1e-10`).
+
+**Headline result:** on a 66-month hold-out of monthly relative humidity in
+Brasília, $\beta$ARMA achieved the lowest error of four models (MAE **8.73%**,
+RMSE **10.39%**) — and is the only one whose forecasts are *guaranteed* to stay
+within $(0, 1)$. See [Worked Example & Reports](#-worked-example--reports).
 
 ---
 
@@ -26,6 +31,7 @@ package on CRAN, validated against the R reference to machine precision.
 - [📊 Worked Example & Reports](#-worked-example--reports)
 - [🧠 Key Skills Demonstrated](#-key-skills-demonstrated)
 - [📂 Repository Structure](#-repository-structure)
+- [🗺️ Roadmap](#️-roadmap)
 - [🔗 Related Projects](#-related-projects)
 - [📖 Foundational Literature](#-foundational-literature)
 - [🎓 Citation](#-citation)
@@ -52,20 +58,26 @@ with two goals:
 2. Enable future comparisons of computational performance, numerical stability,
    and convergence behavior between the R and Python implementations.
 
-The port reproduces the R package's core estimation routines and **validates
-them against the R reference to machine precision** via a `pytest` suite.
+The port reproduces the R package's core estimation routines and validates them
+against the R reference via a `pytest` suite.
 
 ---
 
 ## ✨ Key Features
 
 - **Unified $\beta$ARMA fitting**: a single `BARMA` class handles any
-  combination of AR and MA lags, including exogenous regressors.
+  combination of AR and MA lags (including non-contiguous, subset-ARMA
+  specifications), pure $\beta$AR / $\beta$MA submodels, and exogenous
+  regressors.
+- **Analytic estimation**: conditional maximum likelihood via SciPy's BFGS
+  optimizer, using the analytic log-likelihood and score vector (gradients)
+  rather than numerical differentiation. The `logit` link is currently
+  supported.
 - **Full inference**: a Fisher Information Matrix implementation provides
   standard errors, z-values, and p-values, with AIC and BIC for model selection.
-- **Diagnostics**: Pearson, raw, and link-scale residuals; a four-panel
-  diagnostic grid (observed vs. fitted, residuals over time, ACF, PACF) and a
-  Ljung–Box portmanteau test with plot.
+- **Diagnostics**: Pearson, raw, and scale residuals; a four-panel diagnostic
+  grid (observed vs. fitted, residuals over time, ACF, PACF) and a Ljung–Box
+  portmanteau test with plot.
 - **Bounded forecasting**: out-of-sample forecasts that, by construction, stay
   strictly within $(0, 1)$, a guarantee ARIMA-family models do not provide.
 - **Validated against R**: a `pytest` suite compares the log-likelihood, score
@@ -76,12 +88,13 @@ them against the R reference to machine precision** via a `pytest` suite.
 
 ## 🧭 Public API
 
-The user-facing interface is organized around five actions:
+Modeling is organized around five actions on the `BARMA` / `BARMAResults`
+classes (both exposed at the package top level):
 
 | Action    | Interface |
 |-----------|-----------|
 | Construct | `BARMA(y, ar, ma, exog, link)` |
-| Fit       | `.fit()` |
+| Fit       | `.fit()` → `BARMAResults` (with `.converged`, `.n_iter`) |
 | Inspect   | `.summary()`, `.aic`, `.bic`, `.log_likelihood`, `.fitted_values`, `.fim_barma` |
 | Diagnose  | `.residuals()`, `.plot_diagnostics()`, `.ljungbox_test()`, `.plot_ljungbox()` |
 | Forecast  | `.forecast()`, `.plot_forecast()` |
@@ -90,7 +103,9 @@ The user-facing interface is organized around five actions:
 
 ## 🛠️ Installation
 
-**Requirements:** Python 3.12+ (developed and tested on Ubuntu 24.04).
+**Requirements:** Python 3.12+ (developed and tested on Ubuntu 24.04). Core
+dependencies are NumPy, SciPy, pandas, matplotlib, and statsmodels; the forecast
+benchmark additionally uses `pmdarima`.
 
 Clone the repository and run from the project directory:
 
@@ -112,7 +127,7 @@ pytest
 
 Editable mode (`-e`) installs the package in place, so the code and the
 companion reports run directly from the repository. Packaging for distribution
-(PyPI) is on the roadmap.
+(PyPI) is on the [roadmap](#️-roadmap).
 
 ---
 
@@ -148,6 +163,9 @@ forecast = fit.forecast(h=len(y_test), exog=X_test)
 fit.plot_forecast(y_test=y_test, exog=X_test)
 ```
 
+The full seasonal specification above — AR lags 1, 21, 24 and MA lags 1, 26 on
+real NASA POWER data — is walked through end to end in the modeling report below.
+
 ---
 
 ## 📊 Worked Example & Reports
@@ -155,27 +173,51 @@ fit.plot_forecast(y_test=y_test, exog=X_test)
 Two companion reports (in `report/`) demonstrate the package on real data
 (monthly relative humidity in Brasília, fetched from the NASA POWER API):
 
-- **[Modeling report](report/report_brasilia_relative_humidity.html)** — a full
-  walkthrough: data, seasonality, model selection, fitting, residual
+- **[Modeling report](https://htmlpreview.github.io/?https://github.com/Everton-da-Costa/BARMA-Python-2026/blob/main/report/report_brasilia_relative_humidity.html)**
+  — a full walkthrough: data, seasonality, model selection, fitting, residual
   diagnostics, and a forecast benchmark against DHR, SARIMA, and ARIMA baselines.
-- **[Roadmap](report/report_roadmap.html)** — validation methodology
-  (R-reference testing to machine precision) and project status.
+- **[Roadmap & validation report](https://htmlpreview.github.io/?https://github.com/Everton-da-Costa/BARMA-Python-2026/blob/main/report/report_roadmap.html)**
+  — validation methodology (R-reference testing to machine precision) and
+  project status.
 
-*(For browser viewing without cloning, render these via GitHub Pages or
-`htmlpreview.github.io`, as in the related R projects.)*
+> These preview links render the reports in the browser via `htmlpreview.github.io`.
+> If you enable GitHub Pages, swap them for the Pages URLs.
+
+### Forecast benchmark
+
+On the 66-month test set (roughly 5.5 years), forecast accuracy was:
+
+| Model      | MAE (%) | RMSE (%) |
+|------------|:-------:|:--------:|
+| **βARMA**  | **8.73**| **10.39**|
+| DHR        | 8.90    | 10.57    |
+| SARIMA     | 11.22   | 13.52    |
+| ARIMA      | 11.88   | 14.38    |
+
+$\beta$ARMA achieves the lowest error on both metrics. It is essentially tied
+with DHR on point accuracy, but unlike all three baselines its forecasts are
+guaranteed to remain within $(0, 1)$ by construction — while SARIMA and ARIMA
+collapse toward the training mean over the horizon.
+
+<!-- After exporting the 4-model forecast comparison figure to assets/forecast_comparison.png, uncomment:
+![Out-of-sample forecast comparison: βARMA and DHR track the seasonal cycle closely, while SARIMA and ARIMA collapse toward the mean.](assets/forecast_comparison.png)
+-->
 
 ---
 
 ## 🧠 Key Skills Demonstrated
 
 - **Statistical software engineering**: porting a published statistical method
-  from R to Python with a clean, class-based API (model/results separation).
+  from R to Python with a clean, class-based API (model/results separation) and
+  a modular estimation engine (log-likelihood, score vector, starting values,
+  and link structure as separate components).
 - **Numerical validation**: a `pytest` suite verifying the Python
-  implementation against an R reference at machine precision (`1e-10`).
+  implementation against an R reference (log-likelihood, score vector, starting
+  values, link structure) at a `1e-10` tolerance.
 - **Statistical inference**: translated the Fisher Information Matrix, score
   vector, and analytic log-likelihood from a validated R implementation to
-  Python, verified against the R reference.
-- **Time series analysis**: subset-ARMA specification, model selection via BIC,
+  Python.
+- **Time series analysis**: subset-ARMA specification, model selection by BIC,
   residual diagnostics (ACF, PACF, Ljung–Box), and out-of-sample forecasting.
 - **Reproducible research**: Quarto reports as narrated, end-to-end case
   studies.
@@ -186,20 +228,45 @@ Two companion reports (in `report/`) demonstrate the package on real data
 
 ```plaintext
 .
-├── src/                # Source code (model.py: BARMA and results classes).
-├── tests/              # pytest suite validating against the R reference.
-├── original_R_code/    # R reference implementation used for validation.
+├── src/                        # Estimation engine and public API
+│   ├── model.py                #   BARMA + BARMAResults classes
+│   ├── barma.py                #   core fitting routines
+│   ├── loglik_barma.py         #   analytic log-likelihood
+│   ├── score_vector_barma.py   #   analytic score vector (gradients)
+│   ├── make_link_structure.py  #   link function (logit)
+│   ├── start_values.py         #   starting-value estimation
+│   ├── fitted_barma.py         #   fitted-value computation
+│   ├── config.py, utils.py     #   configuration and helpers
+│   └── __init__.py             #   exposes BARMA, BARMAResults
+├── tests/                      # pytest suite validating against the R reference
+├── original_R_code/            # R reference implementation (validation oracle)
 ├── data/
-│   ├── processed/      # Processed time series (.csv).
-│   └── raw/            # Raw data and reference values from R.
-├── scripts/            # Data-fetching scripts (fetch_humidity_brasilia.py).
-├── report/             # Quarto reports (modeling walkthrough, roadmap).
-├── pyproject.toml      # Package metadata and dependencies.
-├── Makefile            # Common tasks (test, render reports).
-├── _quarto.yml         # Quarto project configuration.
-├── LICENSE             # MIT License.
-└── README.md           # This file.
+│   ├── processed/              # Processed time series (.csv)
+│   └── raw/                    # Raw data + R reference values (loglik, score, starts)
+├── scripts/                    # fetch_humidity_brasilia.py (NASA POWER ingestion)
+├── report/                     # Quarto reports (modeling walkthrough, roadmap)
+├── pyproject.toml              # Package metadata and dependencies
+├── Makefile                    # Common tasks (test, render reports)
+├── _quarto.yml                 # Quarto project configuration
+├── .env.example                # QUARTO_PYTHON template for rendering
+├── LICENSE                     # MIT License
+└── README.md                   # This file
 ```
+
+---
+
+## 🗺️ Roadmap
+
+- **Package for distribution (PyPI):** expose a proper top-level package import
+  (replacing the current `from src.model import BARMA`), with documentation and
+  install instructions.
+- **Additional link functions:** extend beyond `logit` to `cloglog`, `loglog`,
+  and `probit`, matching the R reference implementation.
+- **Extend benchmarking:** add machine-learning baselines — gradient-boosted
+  trees (XGBoost/LightGBM) on lagged and calendar features, and a neural
+  forecaster (e.g. N-BEATS via `neuralforecast`).
+- **Performance & stability study:** compare R vs. Python convergence behavior
+  on flat-likelihood cases — the open question that motivated this port.
 
 ---
 
@@ -240,7 +307,22 @@ This project is part of a broader body of work on beta autoregressive models:
 
 ## 🎓 Citation
 
-If you use this code in your research, please cite the underlying methodology:
+If you use this software in your research, please cite the repository:
+
+```bibtex
+@software{Costa_BARMA_Python_2026,
+  author  = {Costa, Everton da},
+  title   = {{BARMA-Python}: A Python Implementation of Beta Autoregressive
+             Moving Average Models},
+  year    = {2026},
+  version = {1.0.0},
+  url     = {https://github.com/Everton-da-Costa/BARMA-Python-2026}
+}
+```
+
+The implementation is based on the methodology introduced by
+Rocha & Cribari-Neto (2009); if you reference the underlying model, please also
+cite:
 
 ```bibtex
 @Article{Rocha_Cribari_2009,
@@ -270,4 +352,5 @@ for details.
 ## 📬 Contact
 
 **Everton da Costa**
-📧 <everto.cost@gmail.com>
+- 💼 [LinkedIn](https://linkedin.com/in/everton-da-costa)
+- 📧 <everto.cost@gmail.com>

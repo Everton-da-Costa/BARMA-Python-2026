@@ -1,5 +1,5 @@
 ---
-title: "BARMA-Python: Modeling Relative Humidity in Brasília with the $β$ARMA Model"
+title: "BARMA-Python: Modeling Relative Humidity in Brasília with the BARMA Model"
 author: "Everton da Costa"
 date: today
 bibliography: references.bib
@@ -7,6 +7,7 @@ csl: https://raw.githubusercontent.com/citation-style-language/styles/master/har
 format:
   html:
     theme: flatly
+    embed-resources: false
     toc: true
     toc-location: left
     toc-depth: 3
