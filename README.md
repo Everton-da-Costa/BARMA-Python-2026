@@ -177,8 +177,7 @@ Two companion reports (in `report/`) demonstrate the package on real data
   — validation methodology (R-reference testing to machine precision) and
   project status.
 
-> These preview links render the reports in the browser via `htmlpreview.github.io`.
-> If you enable GitHub Pages, swap them for the Pages URLs.
+> These reports render in the browser via `htmlpreview.github.io`.
 
 ### Forecast benchmark
 
