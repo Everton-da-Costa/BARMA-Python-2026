@@ -1,23 +1,34 @@
-import pandas as pd
-import numpy as np
-from scipy.optimize import minimize
+# =====================================================================================
+# Imports
+# =====================================================================================
 
-from src.utils import _validate_model_specification, _build_model_config
-from src.loglik_barma import loglik_barma
-from src.score_vector_barma import score_vector_barma
-
-from src.make_link_structure import make_link_structure
-
+# -----------------------------------------------------------------------------
+# Standard library
+# -----------------------------------------------------------------------------
 # warning of convergence failure
 import warnings
+from typing import ClassVar
 
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.stattools import acf, pacf
+# -----------------------------------------------------------------------------
+# Third-party
+# -----------------------------------------------------------------------------
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.tsa.stattools import acf, pacf
+
+# -----------------------------------------------------------------------------
+# Local
+# -----------------------------------------------------------------------------
+from src.loglik_barma import loglik_barma
+from src.make_link_structure import make_link_structure
+from src.score_vector_barma import score_vector_barma
+from src.utils import _build_model_config, _validate_model_specification
 
 plt.style.use("ggplot")
-
 
 # =====================================================================================
 # class BARMA: Optimization procedure
@@ -282,7 +293,7 @@ class BARMAResults:
     """Container for fitted BARMA model results."""
 
     # Definition of the residuals type supported
-    _VALID_RESID_TYPES = {"pearson", "raw", "scale"}
+    _VALID_RESID_TYPES: ClassVar[set[str]] = {"pearson", "raw", "scale"}
 
     def __init__(self, model, opt_raw):
         self.model = model
@@ -495,7 +506,7 @@ class BARMAResults:
             M_exog[t] = exog[t + max_lag] - varphi @ exog[t + max_lag - ar_lags]
 
         # Initialize derivative arrays
-        d_eta_d_alpha = np.zeros((n_obs))
+        d_eta_d_alpha = np.zeros(n_obs)
         d_eta_d_varphi = np.zeros((n_obs, n_ar_params))
         d_eta_d_theta = np.zeros((n_obs, n_ma_params))
         d_eta_d_beta = np.zeros((n_obs, n_beta_params))

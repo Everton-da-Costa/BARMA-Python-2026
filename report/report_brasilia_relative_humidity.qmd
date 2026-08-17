@@ -56,20 +56,19 @@ sns.set_theme(
 # Introduction
 
 This report documents BARMA-Python, a Python implementation of the
-Beta Autoregressive Moving Average ($\beta$ARMA) model for time series
-bounded in (0, 1). The methodology was originally proposed by Rocha &
-Cribari-Neto (2009) and is currently available in R via the `betaARMA`
-package on CRAN, developed by Everton da Costa, Francisco Cribari-Neto,
-and Vinicius Tavares Scher (Universidade Federal de Pernambuco). This
+Beta Autoregressive Moving Average ($\beta\text{ARMA}$) model for time series
+bounded in (0, 1). The methodology was originally proposed by @Rocha_Cribari_2009 
+and is currently available in R via the `betaARMA`
+package on CRAN, developed by @Costa_Cribari_Scher_2026. This
 Python port reproduces the package's core estimation routines and validates
 them against the R reference to machine precision.
 
 The motivation for porting the methodology to Python is twofold:
-first, to make $\beta$ARMA accessible to the broader Python statistical
+first, to make $\beta\text{ARMA}$ accessible to the broader Python statistical
 and machine learning ecosystem; and second, to enable future comparisons
 of computational performance, numerical stability, and convergence
 behavior between R and Python implementations. In our recent work on
-ridge penalization (Cribari-Neto, Costa, and Fonseca, 2025), we observed
+ridge penalization [@Cribari_Costa_Fonseca_2025], we observed
 that parameter estimates can be adversely affected by the flatness of
 the log-likelihood curvature, leading to a significant number of
 convergence failures. Whether Python's optimization routines (e.g.,
@@ -100,28 +99,34 @@ display(y_full)
 
 ```
 
-We split the data set, using 80% to training the model and 20\% to test the accuracy 
+We split the data set, using 80% to train the model and 20% to test the accuracy 
 of the predictions. 
+
 
 ```{python}
 #| label: split_data
 #| include: true
 #| echo: false
 
-# split the data set with 80% for train and 20% for test
+# Split the data set with 80% for train and 20% for test
 split_index = int(len(y_full) * 0.8)
 y_train = y_full.iloc[:split_index]
 y_test = y_full.iloc[split_index:]
 
-print(f"The train data start in {y_train.index[0]} and goes to")
-print(f"{y_train.index[len(y_train) - 1]}.")
-print(f"The length of train data is {len(y_train)}.")
+# Extract split boundaries for reporting
+y_train_start = y_train.index[0]
+y_train_end = y_train.index[-1]
+y_train_len = len(y_train)
 
-print("\n")
+y_test_start = y_test.index[0]
+y_test_end = y_test.index[-1]
+y_test_len = len(y_test)
 
-print(f"The test data start in {y_test.index[0]} and goes to")
-print(f"{y_test.index[len(y_test) - 1]}.")
-print(f"The length of test data is {len(y_test)}.")
+print(f"The train data starts in {y_train_start:%Y-%m} and ends in {y_train_end:%Y-%m}.")
+print(f"It contains {y_train_len} observations.")
+print()
+print(f"The test data starts in {y_test_start:%Y-%m} and ends in {y_test_end:%Y-%m}.")
+print(f"It contains {y_test_len}  observations.")
 
 ```
 
@@ -131,16 +136,19 @@ print(f"The length of test data is {len(y_test)}.")
 #| label: tbl-descriptive-stats
 #| include: true
 #| echo: false
-#| tbl-cap: "Descriptive statistics for monthly relative humidity in Brasília, 1999–2026 ($n = 328$). Excess kurtosis is $-1.06$ and skewness is $-0.57$, indicating a mildly left-skewed, platykurtic distribution consistent with a bounded seasonal series."
+#| tbl-cap: "Descriptive statistics for monthly relative humidity in Brasília, 1999–2026 ($n = 328$)."
 
 y_describe = y_full.describe().round(4)
-y_kurtosis = y_full.kurtosis().round(4)
-y_skew = y_full.skew().round(4)
+y_kurtosis = float(y_full.kurtosis().round(4))
+y_skew = float(y_full.skew().round(4))
 
 display(y_describe.to_frame().T)
-print(f"The excess of kurtosis is: {y_kurtosis}.")
-print(f"The skewness value is: {y_skew}." )
+
 ```
+
+The excess of kurtosis is `{python} y_kurtosis` and the skewness is `{python} y_skew`,
+indicating a mildly left-skewed, platykurtic distribution consistent with the bounded 
+time series.
 
 ## Seasonality
 
@@ -151,17 +159,22 @@ revealing a consistent dry season (June-September) and wet season (November-Marc
 #| label: fig-seasonal-line-plot
 #| include: true
 #| echo: false
-#| fig-cap: "Annual overlays of monthly relative humidity, 1999–2026. The plot reveals a strong seasonal cycle with peak humidity during the wet season (November–March) and a pronounced dry season (June–September)."
+#| fig-cap: "Annual overlays of monthly relative humidity, 1999–2026 (2026 is partial, through April). The plot reveals a strong seasonal cycle with peak humidity during the wet season (November–March) and a pronounced dry season (June–September)."
 
-y_full.index = pd.to_datetime(y_full.index)
+month_order = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ]
+
+month_categorical = pd.Categorical(
+    y_full.index.month_name().str[:3], categories=month_order, ordered=True
+)
 
 seasonal_df = pd.DataFrame({
     'Humidity': y_full,
-    'Month': y_full.index.month_name().str[:3],
+    'Month': month_categorical,
     'Year': y_full.index.year
 })
 
-# plt.figure(figsize=(6.5, 5))
 sns.lineplot(
     data = seasonal_df, 
     x="Month",
@@ -172,7 +185,6 @@ sns.lineplot(
     alpha=0.8
 )
 
-# plt.title("Seasonal Plot: Relative Humidity in Brasília", pad=20)
 plt.xlabel("")
 plt.ylabel("Relative Humidity")
 plt.tick_params(labelsize=8)
@@ -180,7 +192,6 @@ plt.tick_params(labelsize=8)
 plt.legend(bbox_to_anchor=(0.5, -0.15), loc="upper center", fontsize=9, ncol=6)
 plt.tight_layout()
 plt.show()
-
 
 ```
 
@@ -200,7 +211,8 @@ sns.boxplot(
     hue='Month',
     palette="Blues",
     fliersize=5,
-    legend=False
+    legend=False,
+    dodge=False
 )
 
 sns.stripplot(
@@ -231,38 +243,46 @@ To account for the annual seasonal cycle, we include two harmonic regressors, a 
 and cosine  term with period 12 months.
 
 ```{python}
+#| label: harmonic-regressors
+#| include: true
+#| echo: true
+#| code-fold: true
+#| code-summary: "Show harmonic regressors code"
+
 freq = 12
-n_obs_train_sub = len(y_train)
-
-trend_index_train = np.arange(1, n_obs_train_sub + 1)
-hs_train: np.ndarray = np.sin(2 * np.pi * trend_index_train / freq)
-hc_train: np.ndarray = np.cos(2 * np.pi * trend_index_train / freq)
-
-X_train: np.ndarray = np.column_stack((hs_train, hc_train))
-
-print(f"The shape of the X_train matrix is: {X_train.shape}")
-
+n_train = len(y_train)
 n_test = len(y_test)
 
-index_test_start = np.max(trend_index_train) + 1
-index_end_start = np.max(trend_index_train) + n_test + 1
-trend_index_test = np.arange(index_test_start, index_end_start, 1)
+trend_train = np.arange(1, n_train + 1)
+trend_test = np.arange(n_train + 1, n_train + n_test + 1)
 
-hs_test: np.ndarray = np.sin(2 * np.pi * trend_index_test / freq)
-hc_test: np.ndarray = np.cos(2 * np.pi * trend_index_test / freq)
+phase_train = 2 * np.pi * trend_train / freq
+phase_test = 2 * np.pi * trend_test / freq
 
-X_test: np.ndarray = np.column_stack((hs_test, hc_test))
+# harmonic: train
+hs_train: np.ndarray = np.sin(phase_train)
+hc_train: np.ndarray = np.cos(phase_train)
 
-X_test: pd.DataFrame = pd.DataFrame(X_test)
+X_train: np.ndarray = np.column_stack((hs_train, hc_train))
+print(f"The shape of the X_train matrix is: {X_train.shape}.")
 
-X_test.index = y_test.index
+# harmonic: test
+hs_test: np.ndarray = np.sin(phase_test)
+hc_test: np.ndarray = np.cos(phase_test)
 
-print(f"The shape of the X_test matrix is: {X_test.shape}")
+# X_test carries a date index (unlike X_train) so it aligns with y_test
+# when passed to .forecast() / .plot_forecast() later in the report.
+X_test: pd.DataFrame = pd.DataFrame(
+    np.column_stack((hs_test, hc_test)), 
+    index=y_test.index
+)
+
+print(f"The shape of the X_test matrix is: {X_test.shape}.")
 
 ```
 
 
-# $\beta$ARMA Model
+# $\beta\text{ARMA}$ Model
 
 To align with the approach used in the R package [@Costa_Cribari_Scher_2026], we are 
 using the response variable in the predictor scale. Additionally, following the 
@@ -271,25 +291,25 @@ authors' recommendation, we will use Pearson residuals in the Residuals Analysis
 ## Model Specification
 
 When the seasonality is strong, even harmonic regressors might not be sufficient. 
-In this case, an option provided by the $\beta$ARMA models consists of using a specific 
+In this case, an option provided by the $\beta\text{ARMA}$ models consists of using a specific 
 range of lags during model selection.
 
-For example, we started with the $\beta$AR model without an MA component and computed 
+For example, we started with the $\beta\text{AR}$ model without an MA component and computed 
 the estimates starting from lag 1 up to 36 to verify the presence of seasonality over a 
-3-year period; after this, we did it again for the pure $\beta$MA models. 
-We consolidated these values into a table and added the estimates of the $\beta$ARMA 
+3-year period; after this, we did it again for the pure $\beta\text{MA}$ models. 
+We consolidated these values into a table and added the estimates of the $\beta\text{ARMA}$ 
 model using only the intercept and the precision estimate, without AR or MA terms.
 The target was the minimal BIC (the AIC yielded coinciding results for this procedure). 
 
 We applied this method for each component we added to the model until we had three 
-finalists. The model with the smallest BIC was the $\beta$ARMA model with AR lags at 
+finalists. The model with the smallest BIC was the $\beta\text{ARMA}$ model with AR lags at 
 positions 1, 21, 24, and MA at 1 and 26, using the logit link function. 
 The stopping criterion for this procedure was the presence of white noise in the 
 residuals. Once achieved, we stopped the search. 
 
 ## Fitted Model
 
-We first define the AR and MA components of the $\beta$ARMA model following the 
+We first define the AR and MA components of the $\beta\text{ARMA}$ model following the 
 procedure described in the previous section, along with the logit link function. 
 
 ```{python}
@@ -331,10 +351,10 @@ The model summary can be observed with the `.summary()` method.
 ```{python}
 #| label: tbl-summary-barma-model
 #| include: true
-#| echo: false
+#| echo: true
 #| tbl-cap: "Estimated coefficients, standard errors, z-values, and p-values for the $\\beta$ARMA model: autoregressive terms ($\\varphi$), moving average terms ($\\theta$), harmonic regressors ($\\beta$), intercept ($\\alpha$), and precision ($\\phi$). All parameters are significant at the 5% level. AIC and BIC are reported below the table."
 
-barma_fit.summary()
+display(barma_fit.summary())
 
 ```
 
@@ -543,18 +563,20 @@ plt.close(forecast_plot_barma)
 
 # Baseline Models
 
-Now, we evaluate the accuracy of the forecasts using the  $\beta$ARMA model, 
+Now, we evaluate the accuracy of the forecasts using the  $\beta\text{ARMA}$ model, 
 following the model selection and evaluation procedure of @Costa_Cribari_Scher_2024. 
 We reserved 20% of the dataset (66 observations, roughly 5.5 years) for the test set. 
 Forecast accuracy is evaluated using MAE and RMSE; the non-seasonal and seasonal 
 integration orders are set to $d=D=0$ since the response is bounded in $(0,1)$.
 
 We consider traditional forecast strategies to benchmark the forecast from the
-$\beta$ARMA model. Specifically, we use 
+$\beta\text{ARMA}$ model. Specifically, we use 
 SARIMA (seasonal autoregressive integrated moving average)
 with $s=12$ because we have monthly data; 
-and DHR (Dynamic Harmonic Regressors), using the same harmonic regressors as the 
-$\beta$ARMA model (sine and cosine). 
+and DHR (Dynamic Harmonic Regressors) 
+[@Young_Pedregal_Tych_1999; @Hyndman_Athanasopoulos_2021], 
+using the same harmonic regressors as the 
+$\beta\text{ARMA}$ model (sine and cosine). 
 To verify the impact of the seasonality in the model, we also use 
 an ARIMA model without any seasonal component or harmonic regressor.
 
@@ -662,7 +684,7 @@ plt.close(plot_arima_fit)
 # Results
 
 In @tbl-forecast-metrics, we have the MAEs and RMSEs (x100) of the 
-$\beta$ARMA forecast together with 
+$\beta\text{ARMA}$ forecast together with 
 DHR $(\text{order}: (2,0,3))$, 
 SARIMA $(\text{order}: (1,0,0)(1,0,0)_{12})$ and 
 ARIMA $(\text{order}: (2,0,3))$ models.
@@ -674,9 +696,9 @@ We can note that seasonality is strong in the dataset and the model must deal wi
 it. The ARIMA model yielded the highest errors among the 4 forecast models. 
 The SARIMA model provided an improvement when compared to
 the ARIMA model, but remains distant from the two other models. 
-$\beta$ARMA outperforms DHR and achieves the best results among the 4 forecast models.
-It is important to note that the $\beta$ARMA and DHR predictions are very competitive, but 
-in the structure of the $\beta$ARMA model we can always be sure that the predictions 
+$\beta\text{ARMA}$ outperforms DHR and achieves the best results among the 4 forecast models.
+It is important to note that the $\beta\text{ARMA}$ and DHR predictions are very competitive, but 
+in the structure of the $\beta\text{ARMA}$ model we can always be sure that the predictions 
 and the fitted values stay in the interval $(0,1)$. 
 We do not have this guarantee with the other three models. 
 For readers interested in seeing a full comparison between the models, 
@@ -716,7 +738,7 @@ In this figure, we can see observed values as points and the
 forecasts of each model as lines. 
 The degradation of the predictions from the ARIMA and SARIMA models over time 
 is notable. 
-Also notable is the close competition between the $\beta$ARMA and DHR models,
+Also notable is the close competition between the $\beta\text{ARMA}$ and DHR models,
 sometimes resulting in the overlapping of the lines.
 
 ```{python}
@@ -783,7 +805,7 @@ plt.close(fig)
 
 # Conclusion
 
-In this work, we successfully imported the main functionalities of the $\beta$ARMA model
+In this work, we successfully imported the main functionalities of the $\beta\text{ARMA}$ model
 from the R package [@Costa_Cribari_Scher_2026] into Python. Backed by unit tests via 
 `pytest`, we presented the initial version of a future Python package. We demonstrated 
 these functionalities using a real-world dataset of relative humidity in Brasilia, 
@@ -793,7 +815,7 @@ of predictions and residuals using ACF, PACF and Ljung-Box tests for lags 6 thro
 We also benchmarked our implementation against DHR, SARIMA, and ARIMA approaches 
 using the `pmdarima` package.
 Evaluating the MAE, RMSE, and the residual diagnostics made the advantage of the 
-$\beta$ARMA model clearly evident: it yielded white noise residuals, and 
+$\beta\text{ARMA}$ model clearly evident: it yielded white noise residuals, and 
 error metrics that were highly competitive, or superior, to the traditional baselines. 
 
 For the sake of brevity, the full comparison was not the primary target of this report;
@@ -804,17 +826,17 @@ For readers seeking a deeper dive into theoretical and practical advantages of t
 methodology, we invite you to read our publication in the Journal of Hydrology 
 [@Costa_Cribari_Scher_2024].
 In that paper we provide a comprehensive comparative analysis exploring the 
-full advantages of $\beta$ARMA model. Specifically, we modeled the useful volume 
+full advantages of $\beta\text{ARMA}$ model. Specifically, we modeled the useful volume 
 proportion of three distinct water reservoirs in the São Francisco River basin, 
 a critical water source for Brazil's northeast region. 
 The paper highlights crucial theoretical guarantees, such as the fact that the 
-$\beta$ARMA model inherently restricts fitted and predicted values to the 
+$\beta\text{ARMA}$ model inherently restricts fitted and predicted values to the 
 strictly valid (0,1) interval, a property not guaranteed by ARIMA-family approaches. 
 
 
 # Future works
 We successfully achieved the first goal in this project, which was to make the 
-$\beta$ARMA model accessible to the broader Python statistical and machine learning 
+$\beta\text{ARMA}$ model accessible to the broader Python statistical and machine learning 
 ecosystem. Due to time constraints and the extensive scope of this work, we will defer 
 questions regarding computational performance and numerical stability to future work.
 The computationally intensive simulation studies required for this analysis will be 

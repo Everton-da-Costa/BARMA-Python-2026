@@ -241,7 +241,7 @@ This is visualized in Figure 6 of the **[Modeling report](https://htmlpreview.gi
 ├── pyproject.toml              # Package metadata and dependencies
 ├── Makefile                    # Common tasks (test, render reports)
 ├── _quarto.yml                 # Quarto project configuration
-├── .env.example                # QUARTO_PYTHON template for rendering
+├── _environment                # Shared QUARTO_PYTHON default (.venv/bin/python)
 ├── LICENSE                     # MIT License
 └── README.md                   # This file
 ```
@@ -318,13 +318,13 @@ If your work utilizes or compares against the R ecosystem, please consider citin
 original package:
 
 ```bibtex
-@Manual{Costa_Cribari_Scher2026,
+@Manual{Costa_Cribari_Scher_2026,
   title   = {betaARMA: Beta Autoregressive Moving Average Models},
   author  = {Costa, E. and Cribari-Neto, F. and Scher, V. T.},
   year    = {2026},
   note    = {R package version 1.2.0},
   doi     = {10.32614/CRAN.package.betaARMA},
-  url     = {[https://CRAN.R-project.org/package=betaARMA](https://CRAN.R-project.org/package=betaARMA)}
+  url     = {https://CRAN.R-project.org/package=betaARMA}
 }
 ```
 
